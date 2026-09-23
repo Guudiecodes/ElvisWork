@@ -180,6 +180,13 @@ h1, h2, h3, .font-display {
     display: inline-block;
     will-change: transform, opacity;
 }
+/* SplitText's `mask` option wraps each split unit in its own clipping
+   span with these auto-generated class names (line-mask/word-mask/char-mask)
+   and sets overflow:hidden on it inline — this rule is a harmless safety
+   net so the clip still holds even if that inline style is ever stripped. */
+.line-mask, .word-mask, .char-mask {
+    overflow: hidden;
+}
 .loader-role-mask {
     overflow: hidden;
     height: 1.5em;
@@ -351,8 +358,19 @@ h1, h2, h3, .font-display {
 }
 
 /* ---------- Works Carousel ---------- */
-#works-container { background: var(--paper); cursor: grab; }
-#works-container:active { cursor: grabbing; }
+#works-container {
+    background: var(--paper);
+    cursor: grab;
+    /* Desktop had NO top clearance at all (only the mobile media query below
+       gave it padding-block), so the pinned carousel's first card started
+       flush against whatever heading sits right above this container —
+       reading as a collision the instant the pin engaged. This is the fix:
+       give the pinned area its own breathing room and stacking context on
+       every viewport, not just mobile. */
+    padding-top: clamp(4rem, 8vw, 7.5rem);
+    position: relative;
+    z-index: 1;
+}
 .work-item {
     will-change: transform;
     flex-shrink: 0;
@@ -440,6 +458,27 @@ h1, h2, h3, .font-display {
     .work-item { scroll-snap-align: center; }
 }
 
+/* ---------- Testimonials: still in development ---------- */
+/* The cards are real placeholder copy, not real client feedback yet, so
+   they're blurred/dimmed and taken out of the tab order (aria-hidden +
+   inert) rather than presented as if they were finished content. */
+.testimonials-blur {
+    filter: blur(6px);
+    opacity: 0.45;
+    user-select: none;
+}
+.testimonials-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
 /* ---------- Footer social icons ---------- */
 .social-icon {
     width: 3.5rem; height: 3.5rem;
@@ -457,6 +496,40 @@ h1, h2, h3, .font-display {
     transform: translateY(-4px);
 }
 .social-icon svg { width: 1.4rem; height: 1.4rem; }
+
+/* ---------- Why / Manifesto section ---------- */
+/* SplitText creates one inline span per word (see main.js); GSAP sets and
+   animates their opacity/transform/filter/color directly, so this rule
+   only needs to keep them inline-block and hint the browser about what's
+   changing. With reduced motion (or if SplitText fails to load) the
+   paragraph is never split, so it just renders as plain, fully-readable
+   text — nothing here applies. */
+.why-manifesto .word {
+    display: inline-block;
+    will-change: opacity, transform, filter, color;
+}
+.why-signal-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Each reason's top border lights up like a closing circuit trace once
+   its line finishes typing — feedback the plain static border-t never gave. */
+.why-reason { position: relative; }
+.why-reason-fill {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    height: 2px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--teal), var(--teal-bright));
+    box-shadow: 0 0 8px var(--teal-bright);
+    border-radius: var(--r-pill);
+}
 
 /* Custom Tailwind Animations */
 @layer utilities {

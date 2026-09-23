@@ -1,54 +1,51 @@
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
-import javascriptObfuscator from 'vite-plugin-javascript-obfuscator';
+import obfuscatorPlugin from 'vite-plugin-javascript-obfuscator';
 
 export default defineConfig({
   plugins: [
-    javascriptObfuscator({
-      // Obfuscate JS: enable string array encoding and rotation for "encryption-like" effect
-      rotateStringArray: true,
-      stringArray: true,
-      stringArrayEncoding: ['base64'],
-      stringArrayIndexShift: true,
-      stringArrayRotate: true,
-      stringArrayShuffle: true,
-      splitStrings: true,
-      splitStringsChunkLength: 10,
-      // Compact code
-      compact: true,
-      controlFlowFlattening: false, // Disable if it breaks functionality
-      controlFlowFlatteningThreshold: 0.75,
-      deadCodeInjection: true,
-      deadCodeInjectionThreshold: 0.4,
-      debugProtection: false, // Avoid breaking dev tools if needed
-      debugProtectionInterval: false,
-      disableConsoleOutput: true,
-      identifierNamesGenerator: 'mangled',
-      renameGlobals: false,
-      transformObjectKeys: true,
-      unicodeEscapeSequence: false,
+    obfuscatorPlugin({
+      apply: 'build', // don't obfuscate during `npm run dev` — only production builds
+      // Your obfuscation settings have to live inside `options`, or this
+      // plugin ignores them entirely and falls back to javascript-obfuscator's
+      // own defaults — that was the bug in the version you pasted.
+      options: {
+        rotateStringArray: true,
+        stringArray: true,
+        stringArrayEncoding: ['base64'],
+        stringArrayIndexShift: true,
+        stringArrayRotate: true,
+        stringArrayShuffle: true,
+        splitStrings: true,
+        splitStringsChunkLength: 10,
+        compact: true,
+        controlFlowFlattening: false, // enable only if you confirm it doesn't break the pinned ScrollTrigger timelines in main.js
+        controlFlowFlatteningThreshold: 0.75,
+        deadCodeInjection: true,
+        deadCodeInjectionThreshold: 0.4,
+        debugProtection: false, // keep false — true breaks opening devtools to debug your own build
+        disableConsoleOutput: true,
+        identifierNamesGenerator: 'mangled',
+        renameGlobals: false,
+        transformObjectKeys: true,
+        unicodeEscapeSequence: false,
+      },
     }),
     viteSingleFile({
-      // Bundle into single HTML file
-      removeConsole: false, // Keep console for debugging if needed
-      removeDebugger: true,
-      maxSizeInKb: 2048, // Adjust if bundle is too large
+      // Real options only — removeConsole / removeDebugger / maxSizeInKb
+      // aren't part of this plugin's API and were silently doing nothing.
+      useRecommendedBuildConfig: true,
+      removeViteModuleLoader: true,
     }),
   ],
   build: {
     minify: 'esbuild',
     cssMinify: true,
-    cssCodeSplit: false, // For single file
-    rollupOptions: {
-      output: {
-        inlineDynamicImports: true,
-        renderChunk: (code, chunk, options) => {
-          // Ensure JS is processed for obfuscation
-          return code;
-        },
-      },
-    },
+    cssCodeSplit: false,
     target: 'esnext',
-    sourcemap: false, // Disable sourcemaps for obfuscation
+    sourcemap: false,
+    // useRecommendedBuildConfig above already sets assetsInlineLimit and
+    // rollupOptions.output.inlineDynamicImports for you — left out here so
+    // there's one source of truth instead of two configs that could drift.
   },
 });
